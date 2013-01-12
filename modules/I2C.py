@@ -6,7 +6,9 @@ def error_check( value , lower_limit , higher_limit , msg ):
 	if value > higher_limit or value < lower_limit:
 		print ( msg )
 		sys.exit()	
-	
+
+	# there will be a problem if it goes below zero ...
+	# Waiting for it to freeze to check my code	
 class tmp102:
 
 	def __init__( self , CHIP_BASE_ADDRESS ):
@@ -103,7 +105,6 @@ class mcp23017:
 
 	def __init__(self , CHIP_BASE_ADDRESS ):
 		self.CHIP_BASE_ADDRESS = CHIP_BASE_ADDRESS
-		self.result = 0
 
 	def Set_ddr_all_outs( self , port):
 		self.Set_ddr( port , 0 )
@@ -147,7 +148,6 @@ class mcp23017:
 		elif port == 1 : port = 0x13
 		with I2CMaster(1) as master:
 			data = master.transaction( writing_bytes( self.CHIP_BASE_ADDRESS , port ) , reading(self.CHIP_BASE_ADDRESS, 1 ))[0][0]
-			self.result = data 
 			return data
 			
 	def gpio_read_nibble( self , port , nib ):
@@ -177,7 +177,57 @@ class mcp23017:
 			
 	def Set_gpio_bit( self , port , bit ):
 		error_check( port , 0 , 1 , "EEROR Set_gpio_bit( port muast be 0 or 1 )")
-		
-		
 
+
+		
+class mcp23008:			
+##################################################
+
+# 00h	IODIR – I/O DIRECTION REGISTER 
+# 01h 	IPOL – INPUT POLARITY PORT REGISTER
+# 02h	GPINTEN – INTERRUPT-ON-CHANGE PINS
+# 03h	DEFVAL – DEFAULT VALUE REGISTER
+# 04h 	INTCON – INTERRUPT-ON-CHANGE CONTROL REGISTER
+# 05h	IOCON – I/O EXPANDER CONFIGURATION REGISTER
+# 06h	GPPU – GPIO PULL-UP RESISTOR REGISTER
+# 07h 	INTF – INTERRUPT FLAG REGISTER
+# 08h 	INTCAP – INTERRUPT CAPTURED VALUE FOR PORT REGISTER (Read-only)
+# 09h	GPIO – GENERAL PURPOSE I/O PORT REGISTER 
+# 0Ah	OLAT – OUTPUT LATCH REGISTER 0 
+	
+	def __init__(self , CHIP_BASE_ADDRESS ):
+		self.CHIP_BASE_ADDRESS = CHIP_BASE_ADDRESS
+
+	def Set_ddr_all_outs( self ):
+		self.Set_ddr( 0 )
+		
+	def Set_ddr_all_outs( self ):
+		self.Set_ddr( 0xff )
+		
+	def Set_ddr( self , data ):
+		with I2CMaster(1) as master:	
+			master.transaction( writing_bytes( self.CHIP_BASE_ADDRESS , 0 , data ))
+		
+	def Set_gpio_all_on( self ):
+		self.Set_gpio( 0xff )
+
+	def Set_gpio_all_off( self ):
+		self.Set_gpio( 0 )			
+
+	def Set_gpio( self , data ):
+		with I2CMaster(1) as master:	
+			master.transaction( writing_bytes( self.CHIP_BASE_ADDRESS , 0x9 , data ))		
+
+	def gpio_read( self , port ):
+		with I2CMaster(1) as master:
+			data = master.transaction( writing_bytes( self.CHIP_BASE_ADDRESS , 0x9 ) , reading(self.CHIP_BASE_ADDRESS, 1 ))[0][0]
+			return data
 			
+	def Set_pull_ups( self ):
+		with I2CMaster(1) as master:
+			master.transaction( writing_bytes( self.CHIP_BASE_ADDRESS , 0x6 , 0xff ))		
+
+	def Clear_pull_ups( self ):
+		with I2CMaster(1) as master:
+			master.transaction( writing_bytes( self.CHIP_BASE_ADDRESS , 0x6 , 0 ))			
+		

@@ -1,7 +1,20 @@
 import http.client , sys
 import time
 import socket
-key = "key=your_key"
+import os.path
+
+if os.path.exists( './modules/key.conf' ):
+	f = open( './modules/key.conf' , 'r')
+	key = "key=" + f.read()
+	f.close()
+else:
+	print('You have no key.conf I will make one Please edit it')	
+	key = "1234567890123456"
+	f = open( './modules/key.conf' , 'w')
+	key = f.write( key )
+	f.close()	
+	sys.exit()
+
 field_no = "1234567"
 
 def send_data( no_fields , field_data):
@@ -33,6 +46,7 @@ def send_data( no_fields , field_data):
 	except 	socket.error:
 		sys.exit(55)
 	#time.sleep(10)
-	#result = conn.getresponse()
+	result = conn.getresponse()
 	#print("HTTP status code from thinkspeak server: " + str(result.status))
+	if result.status != 200: print ('Error')   # 200 = o.k 
 	#return str(result.status)

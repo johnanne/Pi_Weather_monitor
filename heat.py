@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 import sys
-sys.path.append("/root/mystuff/my_modules") 
+sys.path.append("./modules") 
 
 import  time , getopt , argparse , pickle , os.path , datetime , sys
 from time import strftime
