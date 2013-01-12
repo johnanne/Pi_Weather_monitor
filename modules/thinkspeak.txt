@@ -1,1 +1,1 @@
-Change the key
+Don`t forget to change the key in key.conf
