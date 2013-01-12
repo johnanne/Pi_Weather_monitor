@@ -7,8 +7,9 @@ def error_check( value , lower_limit , higher_limit , msg ):
 		print ( msg )
 		sys.exit()	
 
-	# there will be a problem if it goes below zero ...
-	# Waiting for it to freeze to check my code	
+# there will be a problem if it goes below zero ...
+# Waiting for it to freeze to check my code	
+
 class tmp102:
 
 	def __init__( self , CHIP_BASE_ADDRESS ):
@@ -80,28 +81,28 @@ class mcp32016:    #not tested , but should work
 class mcp23017:
 
 # REGISTER ADDRESSES
-#	IODIRA 		= 0x0		I/O DIRECTION REGISTER
-#	IODIRB		= 0x1	
-#	IPOLA 		= 0x2		INPUT POLARITY REGISTER
-#	IPOLB 		= 0x3 
-#	GPINTENA 	= 0x4		INTERRUPT-ON-CHANGE CONTROL REGISTER
-#	GPINTENB 	= 0x5
-#	DEFVALA 	= 0x6		DEFAULT VALUE REGISTER
-#	DEFVALB 	= 0x7
-#	INTCONA 	= 0x8		INTERRUPT CONTROL REGISTER
-#	INTCONB 	= 0x9
-#	IOCON 		= 0xa		I/O EXPANDER CONFIGURATION REGISTER
-#	IOCON 		= 0xb
-#	GPPUA 		= 0xc		GPIO PULL-UP RESISTOR REGISTER
-#	GPPUB 		= 0xd
-#	INTFA 		= 0xe		INTERRUPT FLAG REGISTER
-#	INTFB 		= 0xf
-#	INTCAPA 	= 0x10		INTERRUPT CAPTURE REGISTER
-#	INTCAPB 	= 0x11
-#	GPIOA 		= 0x12		GENERAL PURPOSE I/O PORT REGISTER
-#	GPIOB 		= 0x13		
-#	OLATA 		= 0x14		OUTPUT LATCH REGISTER
-#	OLATB 		= 0x15
+	IODIRA 		= 0x0	#	I/O DIRECTION REGISTER
+	IODIRB		= 0x1	
+	IPOLA 		= 0x2	#	INPUT POLARITY REGISTER
+	IPOLB 		= 0x3 
+	GPINTENA 	= 0x4	#	INTERRUPT-ON-CHANGE CONTROL REGISTER
+	GPINTENB 	= 0x5
+	DEFVALA 	= 0x6	#	DEFAULT VALUE REGISTER
+	DEFVALB 	= 0x7
+	INTCONA 	= 0x8	#	INTERRUPT CONTROL REGISTER
+	INTCONB 	= 0x9
+	IOCON 		= 0xa	#	I/O EXPANDER CONFIGURATION REGISTER
+	IOCON 		= 0xb
+	GPPUA 		= 0xc	#	GPIO PULL-UP RESISTOR REGISTER
+	GPPUB 		= 0xd
+	INTFA 		= 0xe	#	INTERRUPT FLAG REGISTER
+	INTFB 		= 0xf
+	INTCAPA 	= 0x10	#	INTERRUPT CAPTURE REGISTER
+	INTCAPB 	= 0x11
+	GPIOA 		= 0x12	#	GENERAL PURPOSE I/O PORT REGISTER
+	GPIOB 		= 0x13		
+	OLATA 		= 0x14	#	OUTPUT LATCH REGISTER
+	OLATB 		= 0x15
 
 	def __init__(self , CHIP_BASE_ADDRESS ):
 		self.CHIP_BASE_ADDRESS = CHIP_BASE_ADDRESS
@@ -180,20 +181,20 @@ class mcp23017:
 
 
 		
-class mcp23008:			
-##################################################
+class mcp23008:	
 
-# 00h	IODIR – I/O DIRECTION REGISTER 
-# 01h 	IPOL – INPUT POLARITY PORT REGISTER
-# 02h	GPINTEN – INTERRUPT-ON-CHANGE PINS
-# 03h	DEFVAL – DEFAULT VALUE REGISTER
-# 04h 	INTCON – INTERRUPT-ON-CHANGE CONTROL REGISTER
-# 05h	IOCON – I/O EXPANDER CONFIGURATION REGISTER
-# 06h	GPPU – GPIO PULL-UP RESISTOR REGISTER
-# 07h 	INTF – INTERRUPT FLAG REGISTER
-# 08h 	INTCAP – INTERRUPT CAPTURED VALUE FOR PORT REGISTER (Read-only)
-# 09h	GPIO – GENERAL PURPOSE I/O PORT REGISTER 
-# 0Ah	OLAT – OUTPUT LATCH REGISTER 0 
+# REGISTER ADDRESSES
+	IODIR 	= 0x0	#	I/O DIRECTION REGISTER 
+	IPOL	= 0x1	#	INPUT POLARITY PORT REGISTER
+	GPINTEN	= 0x2	#	INTERRUPT-ON-CHANGE PINS
+	DEFVAL	= 0x3	#	DEFAULT VALUE REGISTER
+	INTCON	= 0x4	#	INTERRUPT-ON-CHANGE CONTROL REGISTER
+	IOCON	= 0x5	#	I/O EXPANDER CONFIGURATION REGISTER
+	GPPU	= 0x6	#	GPIO PULL-UP RESISTOR REGISTER
+	INTF	= 0x7	#	INTERRUPT FLAG REGISTER
+	INTCAP	= 0x8	#	INTERRUPT CAPTURED VALUE FOR PORT REGISTER (Read-only)
+	GPIO	= 0x9	#	GENERAL PURPOSE I/O PORT REGISTER 
+	OLAT	= 0xA	#	OUTPUT LATCH REGISTER 0
 	
 	def __init__(self , CHIP_BASE_ADDRESS ):
 		self.CHIP_BASE_ADDRESS = CHIP_BASE_ADDRESS
@@ -201,12 +202,12 @@ class mcp23008:
 	def Set_ddr_all_outs( self ):
 		self.Set_ddr( 0 )
 		
-	def Set_ddr_all_outs( self ):
+	def Set_ddr_all_ins( self ):
 		self.Set_ddr( 0xff )
 		
 	def Set_ddr( self , data ):
 		with I2CMaster(1) as master:	
-			master.transaction( writing_bytes( self.CHIP_BASE_ADDRESS , 0 , data ))
+			master.transaction( writing_bytes( self.CHIP_BASE_ADDRESS , mcp23008.IODIR , data ))
 		
 	def Set_gpio_all_on( self ):
 		self.Set_gpio( 0xff )
@@ -216,18 +217,18 @@ class mcp23008:
 
 	def Set_gpio( self , data ):
 		with I2CMaster(1) as master:	
-			master.transaction( writing_bytes( self.CHIP_BASE_ADDRESS , 0x9 , data ))		
+			master.transaction( writing_bytes( self.CHIP_BASE_ADDRESS , mcp23008.GPIO , data ))		
 
-	def gpio_read( self , port ):
+	def gpio_read( self ):
 		with I2CMaster(1) as master:
-			data = master.transaction( writing_bytes( self.CHIP_BASE_ADDRESS , 0x9 ) , reading(self.CHIP_BASE_ADDRESS, 1 ))[0][0]
+			data = master.transaction( writing_bytes( self.CHIP_BASE_ADDRESS , mcp23008.GPIO ) , reading(self.CHIP_BASE_ADDRESS, 1 ))[0][0]
 			return data
 			
 	def Set_pull_ups( self ):
 		with I2CMaster(1) as master:
-			master.transaction( writing_bytes( self.CHIP_BASE_ADDRESS , 0x6 , 0xff ))		
+			master.transaction( writing_bytes( self.CHIP_BASE_ADDRESS , mcp23008.GPPU , 0xff ))		
 
 	def Clear_pull_ups( self ):
 		with I2CMaster(1) as master:
-			master.transaction( writing_bytes( self.CHIP_BASE_ADDRESS , 0x6 , 0 ))			
+			master.transaction( writing_bytes( self.CHIP_BASE_ADDRESS , mcp23008.GPPU , 0 ))			
 		
