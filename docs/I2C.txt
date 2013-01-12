@@ -1,0 +1,28 @@
+	SETUP
+	-----
+tmp102 = I2C.tmp102(0x48)
+obj_temp = tmp102.read()	
+
+class tmp102:
+	read()
+	clear_hi_and_low()
+
+	SETUP
+	-----
+mcp23017 = I2C.mcp23017(0x23) 
+mcp23017.Set_ddr_all_outs( 1 )
+
+class mcp23017:
+	Set_ddr_all_outs( port )
+	Set_ddr(  port , data )
+	Set_gpio( port , data )
+	Set_gpio_all_on(  port )
+	Set_gpio_all_off(  port )
+	Set_gpio_nibble( port , nib , data )
+	gpio_read(  port )
+	gpio_read_nibble( port , nib ):
+	Set_pull_ups(  port )
+	Clear_pull_ups( port )
+	Set_gpio_bit(  port , bit ):
+
+port = 0 or 1 , nib = 0 or 1 , data = 0 to 255 / 0 to 15 nibble data
