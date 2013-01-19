@@ -1,12 +1,10 @@
 from quick2wire.i2c import *   
 import sys
 
-def error_check( value , lower_limit , higher_limit , msg ):
-	if value > higher_limit or value < lower_limit:
-		print ( msg )
-		sys.exit()	
-	# easy to change and raise a error instead
-	
+def check( value , lower_limit , higher_limit ):
+	if value > higher_limit or value < lower_limit: error = True
+	else: error = False
+	return error
 class tmp102:
 
 # Below zero problem fixed , I hope !!
@@ -20,13 +18,13 @@ class tmp102:
 		return str(self.read())
 
 # ( High byte * 256 ) + Low byte , then / 16 and the result * 0.0625
+# Hi_byte full units , ( Low_byte / 16 ) * 0.0625  
  
 	def read(self):	
 		with I2CMaster(1) as master:
 			Hi_byte , Low_byte = master.transaction( reading(self.CHIP_BASE_ADDRESS , 2))[0]
 			if Hi_byte & 0x80 == 0x80:	
-				Hi_byte = (Hi_byte + 1 & 0xff) 
-				heat = 0 - (( Hi_byte << 4) | ( Low_byte >> 4)) * 0.0625  
+				heat =  0 - ( 256 - Hi_byte ) + (( Low_byte >> 4) * 0.0625 )
 			else:
 				heat = (( Hi_byte << 4) | ( Low_byte >> 4)) * 0.0625  
 			if heat > self.Hi_temp: 	self.Hi_temp = heat
@@ -61,14 +59,10 @@ class mcp32016:    #not tested , but should work
 		self.Set_ddr( port , 0 )
 
 	def Set_gpio( self , port , data ):
-		error_check( port , 0 , 1 ,   "ERROR Set_gpio ( port must be 0 or 1 , byte ) ")
-		error_check( data , 0 , 255 , "ERROR Set_gpio ( not a byte value )")
 		with I2CMaster(1) as master:	
 			master.transaction( writing_bytes( self.CHIP_BASE_ADDRESS , port , data ))
 
 	def Set_ddr(self , port , data ):
-		error_check( port , 0 , 1 ,   "ERROR Set_ddr ( port must be 0 or 1 , byte ) ")
-		error_check( data , 0 , 255 , "ERROR Set_ddr( not a byte value )")
 		if port == 0 :   port = 0x6
 		elif port == 1 : port = 0x7
 		with I2CMaster(1) as master:	
@@ -110,32 +104,35 @@ class mcp23017:
 		self.CHIP_BASE_ADDRESS = CHIP_BASE_ADDRESS
 
 	def Set_ddr_all_outs( self , port):
+		if check( port , 0 , 1 ):	raise Exception( 'Port must be 0 or 1' )	
 		self.Set_ddr( port , 0 )
 
 	def Set_ddr( self , port , data ):
-		error_check( port , 0 , 1 ,   "ERROR Set_ddr ( port must be 0 or 1 ) ")
-		error_check( data , 0 , 255 , "ERROR Set_ddr ( not a byte value )")	
+		if check( port , 0 , 1 ):	raise Exception( 'Port must be 0 or 1' )
+		if check( data , 0 , 255 ):	raise Exception( 'Data must be 0 to 255' )			
 		with I2CMaster(1) as master:	
 			master.transaction( writing_bytes( self.CHIP_BASE_ADDRESS , port , data ))
 
 	def Set_gpio(self , port , data ):
-		error_check( port , 0 , 1 ,   "ERROR Set_gpio ( port must be 0 or 1 ) ")
-		error_check( data , 0 , 255 , "ERROR Set_gpio ( not a byte value )")	
+		if check( port , 0 , 1 ):	raise Exception( 'Port must be 0 or 1' )
+		if check( data , 0 , 255 ):	raise Exception( 'Data must be 0 to 255' )	
 		if port == 0 :   port = mcp23017.GPIOA 
 		elif port == 1 : port = mcp23017.GPIOB
 		with I2CMaster(1) as master:	
 			master.transaction( writing_bytes( self.CHIP_BASE_ADDRESS , port , data ))		
 
 	def Set_gpio_all_on( self , port ):
+		if check( port , 0 , 1 ):	raise Exception( 'Port must be 0 or 1' )	
 		self.Set_gpio( port , 0xff )
 
 	def Set_gpio_all_off( self , port ):
+		if check( port , 0 , 1 ):	raise Exception( 'Port must be 0 or 1' )	
 		self.Set_gpio( port , 0 )	
 		
 	def Set_gpio_nibble(self , port , nib , data ):
-		error_check( port , 0 , 1 ,   "ERROR Set_gpio_nibble ( port must be 0 or 1 ) ")
-		error_check( nib , 0 , 1 ,    "ERROR Set_gpio_nibble( NIB must be 0 or 1  ) ")		
-		error_check( data , 0 , 15 ,  "ERROR Set_gpio( not a nibble value )" )			
+		if check( port , 0 , 1 ):	raise Exception( 'Port must be 0 or 1' )
+		if check( nib , 0 , 1 ):	raise Exception( 'Nib must be 0 or 1' )	
+		if check( data , 0 , 15 ):	raise Exception( 'Data must be 0 to 15' )
 		if port == 0 :   port = mcp23017.GPIOA
 		elif port == 1 : port = mcp23017.GPIOB
 		if nib == 0: mask = 0xf0
@@ -144,18 +141,10 @@ class mcp23017:
 			old_data = master.transaction( writing_bytes( self.CHIP_BASE_ADDRESS , port ) , reading(self.CHIP_BASE_ADDRESS, 1 ))[0][0]
 			data = ( old_data & mask ) + data 
 			master.transaction( writing_bytes( self.CHIP_BASE_ADDRESS , port , data ))				
-	
-	def gpio_read( self , port ):
-		error_check( port , 0 , 1 ,   "ERROR gpio_read ( port must be 0 or 1 ) ")	
-		if port == 0 :   port = mcp23017.GPIOA
-		elif port == 1 : port = mcp23017.GPIOB
-		with I2CMaster(1) as master:
-			data = master.transaction( writing_bytes( self.CHIP_BASE_ADDRESS , port ) , reading(self.CHIP_BASE_ADDRESS, 1 ))[0][0]
-			return data
-			
+
 	def gpio_read_nibble( self , port , nib ):
-		error_check( port , 0 , 1 ,   "ERROR gpio_read_nibble ( port must be 0 or 1 ) ")		
-		error_check( nib , 0 , 1 ,   "ERROR gpio_read_nibble ( NIB must be 0 or 1 ) ")
+		if check( port , 0 , 1 ):	raise Exception( 'Port must be 0 or 1' )
+		if check( nib , 0 , 1 ):	raise Exception( 'Nib must be 0 or 1' )			
 		if port == 0 :   port = mcp23017.GPIOA
 		elif port == 1 : port = mcp23017.GPIOB
 		with I2CMaster(1) as master:
@@ -164,23 +153,89 @@ class mcp23017:
 			if nib == 1: data = (( data & 0xf0 ) >> 4)				
 			return data	
 
+	def Set_gpio_rbg(self , port , nib , data ): # like nibble but only the first 3 bits of each nibble
+		if check( port , 0 , 1 ):	raise Exception( 'Port must be 0 or 1' )
+		if check( nib , 0 , 1 ):	raise Exception( 'Nib must be 0 or 1' )	
+		if check( data , 0 , 7 ):	raise Exception( 'Data must be 0 to 7' )	
+		if port == 0 :   port = mcp23017.GPIOA
+		elif port == 1 : port = mcp23017.GPIOB
+		if nib == 0: mask = 0xf8
+		if nib == 1: data = data << 4 ; mask = 0x8f 
+		with I2CMaster(1) as master:
+			old_data = master.transaction( writing_bytes( self.CHIP_BASE_ADDRESS , port ) , reading(self.CHIP_BASE_ADDRESS, 1 ))[0][0]
+			data = ( old_data & mask ) + data 
+			master.transaction( writing_bytes( self.CHIP_BASE_ADDRESS , port , data ))				
+
+	def gpio_read_rbg( self , port , nib ): # like nibble but only the first 3 bits of each nibble
+		if check( port , 0 , 1 ):	raise Exception( 'Port must be 0 or 1' )
+		if check( nib , 0 , 1 ):	raise Exception( 'Nib must be 0 or 1' )	
+		if port == 0 :   port = mcp23017.GPIOA
+		elif port == 1 : port = mcp23017.GPIOB
+		with I2CMaster(1) as master:
+			data = master.transaction( writing_bytes( self.CHIP_BASE_ADDRESS , port ) , reading(self.CHIP_BASE_ADDRESS, 1 ))[0][0]
+			if nib == 0: data = data & 0x7
+			if nib == 1: data = (( data & 0x70 ) >> 4)				
+			return data	
+			
+	def gpio_read( self , port ):
+		if check( port , 0 , 1 ):	raise Exception( 'Port must be 0 or 1' )
+		if port == 0 :   port = mcp23017.GPIOA
+		elif port == 1 : port = mcp23017.GPIOB
+		with I2CMaster(1) as master:
+			data = master.transaction( writing_bytes( self.CHIP_BASE_ADDRESS , port ) , reading(self.CHIP_BASE_ADDRESS, 1 ))[0][0]
+			return data
+
 	def Set_all_pull_ups( self , port ):
-		error_check( port , 0 , 1 ,   "ERROR Set_pull_ups ( port must be 0 or 1 ) ")	
+		if check( port , 0 , 1 ):	raise Exception( 'Port must be 0 or 1' )	
 		if port == 0 :   port = mcp23017.GPPUA
 		elif port == 1 : port = mcp23017.GPPUB
 		with I2CMaster(1) as master:
 			master.transaction( writing_bytes( self.CHIP_BASE_ADDRESS , port , 0xff ))		
 
 	def Clear_all_pull_ups( self , port ):
-		error_check( port , 0 , 1 ,   "ERROR Claer_pull_ups ( port must be 0 or 1 ) ")	
+		if check( port , 0 , 1 ):	raise Exception( 'Port must be 0 or 1' )
 		if port == 0 :   port = mcp23017.GPPUA
 		elif port == 1 : port = mcp23017.GPPUB
 		with I2CMaster(1) as master:
 			master.transaction( writing_bytes( self.CHIP_BASE_ADDRESS , port , 0 ))	
+
+	def Set_all_inverted( self , port ):	
+		if check( port , 0 , 1 ):	raise Exception( 'Port must be 0 or 1' )
+		if port == 0 :   port = mcp23017.IPOLA 
+		elif port == 1 : port = mcp23017.IPOLB
+		with I2CMaster(1) as master:
+			master.transaction( writing_bytes( self.CHIP_BASE_ADDRESS , port , 0xff ))	
 			
 	def Set_gpio_bit( self , port , bit ):
-		error_check( port , 0 , 1 , "EEROR Set_gpio_bit( port muast be 0 or 1 )")
+		if check( port , 0 , 1 ):	raise Exception( 'Port must be 0 or 1' )
+		if check( bit , 0 , 7 ): 	raise Exception( 'Bit must be 0 to 7' )		
+		if port == 0 :   port = mcp23017.GPIOA 
+		elif port == 1 : port = mcp23017.GPIOB
+		with I2CMaster(1) as master:
+			old_data = master.transaction( writing_bytes( self.CHIP_BASE_ADDRESS , port ) , reading(self.CHIP_BASE_ADDRESS, 1 ))[0][0]
+			data = old_data | 1 << bit 
+			master.transaction( writing_bytes( self.CHIP_BASE_ADDRESS , port , data ))	
+			
+	def Clear_gpio_bit( self , port , bit ):
+		if check( port , 0 , 1 ):	raise Exception( 'Port must be 0 or 1' )
+		if check( bit , 0 , 7 ): 	raise Exception( 'Bit must be 0 to 7' )
+		if port == 0 :   port = mcp23017.GPIOA 
+		elif port == 1 : port = mcp23017.GPIOB
+		with I2CMaster(1) as master:
+			old_data = master.transaction( writing_bytes( self.CHIP_BASE_ADDRESS , port ) , reading(self.CHIP_BASE_ADDRESS, 1 ))[0][0]
+			data = old_data & ~( 1 << bit )
+			master.transaction( writing_bytes( self.CHIP_BASE_ADDRESS , port , data ))		
 
+	def Toggle_gpio_bit( self , port , bit ):
+		if check( port , 0 , 1 ):	raise Exception( 'Port must be 0 or 1' )
+		if check( bit , 0 , 7 ): 	raise Exception( 'Bit must be 0 to 7' )
+		if port == 0 :   port = mcp23017.GPIOA 
+		elif port == 1 : port = mcp23017.GPIOB
+		with I2CMaster(1) as master:
+			old_data = master.transaction( writing_bytes( self.CHIP_BASE_ADDRESS , port ) , reading(self.CHIP_BASE_ADDRESS, 1 ))[0][0]
+			data = old_data ^ 1 << bit	
+			master.transaction( writing_bytes( self.CHIP_BASE_ADDRESS , port , data ))		
+			
 class mcp23008:	
 
 # REGISTER ADDRESSES
@@ -206,7 +261,7 @@ class mcp23008:
 		self.Set_ddr( 0xff )
 		
 	def Set_ddr( self , data ):
-		error_check( data , 0 , 255 , "ERROR Set_ddr ( not a byte value )")		
+		if check( data , 0 , 255 ):	raise Exception( 'Data must be 0 to 255' )			
 		with I2CMaster(1) as master:	
 			master.transaction( writing_bytes( self.CHIP_BASE_ADDRESS , mcp23008.IODIR , data ))
 		
@@ -217,13 +272,13 @@ class mcp23008:
 		self.Set_gpio( 0 )			
 
 	def Set_gpio( self , data ):
-		error_check( data , 0 , 255 , "ERROR Set_gpio ( not a byte value )")		
+		if check( data , 0 , 255 ):	raise Exception( 'Data must be 0 to 255' )		
 		with I2CMaster(1) as master:	
 			master.transaction( writing_bytes( self.CHIP_BASE_ADDRESS , mcp23008.GPIO , data ))		
 			
 	def Set_gpio_nibble( self , nib , data ):
-		error_check( nib , 0 , 1 ,    "ERROR Set_gpio_nibble( NIB must be 0 or 1  ) ")		
-		error_check( data , 0 , 15 ,  "ERROR Set_gpio( not a nibble value )" )			
+		if check( nib , 0 , 1 ):	raise Exception( 'Nib must be 0 or 1' )	
+		if check( data , 0 , 15 ):	raise Exception( 'Data must be 0 to 15' )
 		if nib == 0: mask = 0xf0
 		if nib == 1: data = data << 4 ; mask = 0xf 
 		with I2CMaster(1) as master:
@@ -232,7 +287,7 @@ class mcp23008:
 			master.transaction( writing_bytes( self.CHIP_BASE_ADDRESS , mcp23008.GPIO , data ))				
 			
 	def gpio_read_nibble( self , nib ):
-		error_check( nib , 0 , 1 ,   "ERROR gpio_read_nibble ( NIB must be 0 or 1 ) ")
+		if check( nib , 0 , 1 ):	raise Exception( 'Nib must be 0 or 1' )		
 		with I2CMaster(1) as master:
 			data = master.transaction( writing_bytes( self.CHIP_BASE_ADDRESS , mcp23008.GPIO ) , reading(self.CHIP_BASE_ADDRESS, 1 ))[0][0]
 			if nib == 0: data = data & 0xf
@@ -245,6 +300,7 @@ class mcp23008:
 			return data
 			
 	def Set_pull_ups( self , data ):
+		if check( data , 0 , 255 ):	raise Exception( 'Data must be 0 to 255' )			
 		with I2CMaster(1) as master:
 			master.transaction( writing_bytes( self.CHIP_BASE_ADDRESS , mcp23008.GPPU , data ))	
 			
@@ -255,4 +311,7 @@ class mcp23008:
 	def Clear_all_pull_ups( self ):
 		with I2CMaster(1) as master:
 			master.transaction( writing_bytes( self.CHIP_BASE_ADDRESS , mcp23008.GPPU , 0 ))			
-		
+	
+	def Set_all_inverted(self):
+		with I2CMaster(1) as master:
+			master.transaction( writing_bytes( self.CHIP_BASE_ADDRESS , mcp23008.IPOL , 0xff ))		

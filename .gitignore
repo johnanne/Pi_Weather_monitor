@@ -2,3 +2,4 @@ key.conf
 i2c_save.data
 modules/__pycache__/
 test.py
+mpd_play.py

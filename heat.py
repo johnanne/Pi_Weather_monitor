@@ -42,7 +42,7 @@ class Main_class:
 		if temp < self.Cold: 								self.colour = Blue
 		elif temp >= self.Cold and temp < self.Hot - 2: 	self.colour = Green
 		elif temp >= self.Hot -2 and temp < self.Hot: self.colour = L_Red 
-		elif temp >= self.Hot:  							self.colour = Red	
+		elif temp >= self.Hot:  							self.colour = Red
 	
 	def toggle( self , no , max , value1 , value2 ):
 		self.Toggle[no] = self.Toggle[no] + 1
@@ -112,18 +112,16 @@ if __name__ == '__main__':
 				mst_obj.Cold = num_cold.value 
 				mst_obj.Hot  = num_hot.value
 				num_temp.value = mst_obj.temp_out
-	
+				mst_obj.temp2colour( mst_obj.temp_out )
+
 				while mtime.new_sec() == False:
 				
 					if mtime.check() == True:	
-						mst_obj.temp2colour( mst_obj.temp_out )
-						
 						if mst_obj.colour == Green:
-							mcp23017.Set_gpio_nibble( Port_b , Low_nibble , mst_obj.toggle( 0 , 6 , All_off , mst_obj.colour ) ) 	
+							mcp23017.Set_gpio_rbg( Port_b , Low_nibble , mst_obj.toggle( 0 , 6 , All_off , mst_obj.colour ) ) 	
 						else:
-							mcp23017.Set_gpio_nibble( Port_b , Low_nibble , mst_obj.toggle( 0 , 1 , All_off , mst_obj.colour ) ) 						
-
-					else: mcp23017.Set_gpio_nibble( Port_b , Low_nibble , mst_obj.toggle( 0 , 180 , All_off , mst_obj.colour ) ) 	
+							mcp23017.Set_gpio_rbg( Port_b , Low_nibble , mst_obj.toggle( 0 , 1 , All_off , mst_obj.colour ) ) 
+					else: mcp23017.Set_gpio_rbg( Port_b , Low_nibble , mst_obj.toggle( 0 , 180 , All_off , mst_obj.colour ) ) 	
  						
 		
 					# time to switch light out		
@@ -144,9 +142,8 @@ if __name__ == '__main__':
 					time.sleep(.2)
 					
 				try:
-					if  p.is_alive() == True or p.exitcode == 55: mcp23017.Set_gpio_nibble( Port_b , Hi_nibble , Red )
-					else: mcp23017.Set_gpio_nibble( Port_b , Hi_nibble , All_off )
-
+					if  p.is_alive() == True or p.exitcode == 55: mcp23017.Set_gpio_bit( Port_b , 3 )
+					else: mcp23017.Clear_gpio_bit( Port_b , 3 )
 				except NameError: pass
 			
 		except IOError:

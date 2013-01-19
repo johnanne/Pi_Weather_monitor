@@ -45,7 +45,7 @@ def send_data( no_fields , field_data):
 		conn.request("POST", "/update", params, headers)
 	except 	socket.error:
 		sys.exit(55)
-	#time.sleep(10)
+	time.sleep(2)
 	result = conn.getresponse()
 	#print("HTTP status code from thinkspeak server: " + str(result.status))
 	if result.status != 200: print ('Error')   # 200 = o.k 
